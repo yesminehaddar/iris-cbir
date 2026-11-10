@@ -1,0 +1,26 @@
+# Local configuration (copy .env.example to .env)
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Data: rebuilt by setup.py, or downloaded from MIRFLICKR
+data/features/
+thumbnails/
+*.zip
+*.npy
+*.npz
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log

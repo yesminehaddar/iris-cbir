@@ -1,0 +1,15 @@
+﻿# Ranges rather than exact pins: wide enough to resolve on Python 3.10 through
+# 3.14, capped below the next major of each package so a future release cannot
+# break the build. Developed against fastapi 0.143, numpy 2.5, scikit-image 0.26.
+
+fastapi>=0.110,<1.0
+python-multipart>=0.0.9
+uvicorn[standard]>=0.27,<1.0
+psycopg[binary,pool]>=3.1,<4
+python-dotenv>=1.0,<2
+
+numpy>=1.26,<3
+scipy>=1.11,<2          # scipy.fft.dctn, for the Colour Layout descriptor
+scikit-image>=0.22,<1.0 # hog, local_binary_pattern, rgb2hsv, resize
+pillow>=10.0,<14
+tqdm>=4.66,<5

@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:16
+    container_name: cbir-db
+    environment:
+      POSTGRES_USER: cbir
+      POSTGRES_PASSWORD: cbir
+      POSTGRES_DB: cbir
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Lets `docker compose up -d --wait` block until the server really accepts
+    # connections. The container reports "Up" several seconds before that, which
+    # is long enough for the first script to fail with a connection error.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cbir -d cbir"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
+
+  # Optional: the server in a container too, for the deployed demo.
+  #   docker compose --profile app up -d --build
+  # The index must already exist on the host; build it with
+  #   python scripts/build_index.py flickr1m
+  app:
+    profiles: ["app"]
+    build: .
+    container_name: cbir-app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://cbir:cbir@db:5432/cbir
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/srv/data:ro
+      - ../thumbnails:/srv/thumbnails:ro
+
+volumes:
+  pgdata:

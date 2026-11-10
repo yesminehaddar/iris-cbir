@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Iris</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f6f7f8;
+    --line: #e3e5e9;
+    --line-strong: #cfd3da;
+    --ink: #15181d;
+    --ink-soft: #5c636f;
+    --ink-faint: #8b929d;
+    --accent: #1a1d23;
+    --focus: #4f7cff;
+    --warn: #b42318;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* --- masthead ---------------------------------------------------------- */
+  header {
+    display: flex; align-items: center; gap: 14px;
+    padding: 18px 28px;
+    border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; background: rgba(255,255,255,.92);
+    backdrop-filter: saturate(180%) blur(8px); z-index: 10;
+  }
+  .brand { display: flex; align-items: center; gap: 9px; }
+  .brand svg { display: block; }
+  .wordmark {
+    font-size: 19px; font-weight: 650; letter-spacing: -.015em; color: var(--ink);
+  }
+  #tagline { margin: 0; font-size: 13px; color: var(--ink-faint); }
+  .spacer { flex: 1; }
+
+  /* --- search ------------------------------------------------------------ */
+  .page { max-width: 1320px; margin: 0 auto; padding: 24px 28px 72px; }
+
+  .searchrow { display: flex; gap: 10px; }
+  .searchrow input {
+    flex: 1; min-width: 0;
+    padding: 13px 16px; font: inherit; font-size: 16px;
+    color: var(--ink); background: var(--bg);
+    border: 1px solid var(--line-strong); border-radius: var(--radius);
+  }
+  .searchrow input::placeholder { color: var(--ink-faint); }
+  .searchrow input:focus,
+  select:focus, input[type=file]:focus-visible {
+    outline: 2px solid var(--focus); outline-offset: 1px; border-color: transparent;
+  }
+  button {
+    padding: 13px 24px; font: inherit; font-weight: 600; font-size: 15px;
+    color: #fff; background: var(--accent);
+    border: 1px solid var(--accent); border-radius: var(--radius); cursor: pointer;
+  }
+  button:hover { background: #30353e; border-color: #30353e; }
+  button.minor {
+    padding: 8px 14px; font-size: 13px; font-weight: 500;
+    color: var(--ink); background: var(--bg); border-color: var(--line-strong);
+  }
+  button.minor:hover { background: var(--surface); border-color: var(--ink-faint); }
+
+  /* --- controls ---------------------------------------------------------- */
+  .controls {
+    display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px 20px;
+    margin-top: 16px; padding: 16px 18px;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .ctl { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .ctl > label, .ctl > span.lbl {
+    font-size: 12px; font-weight: 600; color: var(--ink-soft);
+  }
+  .ctl.grow { flex: 1 1 100%; }
+  select {
+    padding: 7px 10px; font: inherit; font-size: 14px;
+    color: var(--ink); background: var(--bg);
+    border: 1px solid var(--line-strong); border-radius: 8px;
+  }
+  input[type=file] { font-size: 13px; max-width: 230px; }
+  fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+  .hint { font-size: 12px; font-weight: 400; color: var(--ink-faint); }
+
+  /* pill-style multi-select, for descriptors and the fuzzy switch */
+  .checks { display: flex; flex-wrap: wrap; gap: 7px; }
+  .checks label {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 6px 12px; font-size: 13px; cursor: pointer;
+    background: var(--bg); border: 1px solid var(--line-strong); border-radius: 999px;
+    user-select: none;
+  }
+  .checks label:hover { border-color: var(--ink-faint); }
+  .checks label:has(input:checked) {
+    color: #fff; background: var(--accent); border-color: var(--accent);
+  }
+  .checks label:has(input:checked) .dim { color: rgba(255,255,255,.65); }
+  .checks input { margin: 0; accent-color: var(--accent); }
+  .checks label:has(input:checked) input { accent-color: #fff; }
+  .checks .dim { color: var(--ink-faint); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .checks label.off { opacity: .4; cursor: not-allowed; }
+
+  .facets { display: flex; flex-wrap: wrap; gap: 10px 12px; }
+  .facets label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--ink-soft); }
+  .facets select { min-width: 118px; }
+
+  /* Sits inside a .ctl, which is a column, so the direction has to be reset or
+     the buttons stack and centre. */
+  .actions {
+    flex-direction: row; flex-wrap: wrap; gap: 8px;
+    align-items: center; justify-content: flex-start;
+  }
+  .searchhint {
+    margin: 9px 2px 0; font-size: 12.5px; color: var(--ink-faint);
+    min-height: 18px;
+  }
+
+  /* --- status ------------------------------------------------------------ */
+  .status {
+    margin: 16px 0 0; min-height: 20px;
+    font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums;
+  }
+  .status.error { color: var(--warn); font-weight: 500; }
+  .status code {
+    font-size: 12px; background: var(--surface);
+    padding: 2px 6px; border-radius: 5px; border: 1px solid var(--line);
+  }
+  .status em { color: var(--ink-faint); font-style: normal; }
+
+  /* --- results ----------------------------------------------------------- */
+  .layout { display: flex; gap: 28px; align-items: flex-start; margin-top: 24px; }
+  .aside { flex: 0 0 196px; position: sticky; top: 92px; }
+  .aside h2, .results h2 {
+    margin: 0 0 10px; font-size: 13px; font-weight: 600; color: var(--ink-soft);
+  }
+  .aside img {
+    width: 196px; height: 196px; object-fit: contain;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .aside p { margin: 10px 0 0; font-size: 12px; line-height: 1.45; color: var(--ink-faint); }
+
+  .results { flex: 1 1 auto; min-width: 0; }
+  /* Tiles kept modest: the thumbnails are 64x64, so a larger cell only upscales. */
+  .grid {
+    display: grid; gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  }
+  figure { margin: 0; min-width: 0; }
+  .thumb {
+    position: relative; display: block; overflow: hidden;
+    aspect-ratio: 1; border-radius: 8px; background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .thumb img {
+    width: 100%; height: 100%; object-fit: cover;
+    display: block; cursor: pointer;
+    transition: transform .18s ease;
+  }
+  .thumb:hover img { transform: scale(1.04); }
+  .thumb:hover { border-color: var(--ink-faint); }
+  .score {
+    position: absolute; left: 6px; bottom: 6px;
+    padding: 2px 6px; border-radius: 5px;
+    font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums;
+    color: #fff; background: rgba(12,14,18,.78);
+    pointer-events: none;
+  }
+  @media (max-width: 760px) {
+    header { padding: 14px 16px; }
+    #tagline { display: none; }
+    .page { padding: 18px 16px 56px; }
+    .layout { flex-direction: column; }
+    .aside { position: static; flex-basis: auto; }
+    .aside img { width: 148px; height: 148px; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
+
+    /* Nothing may overflow sideways: the search button is pushed off the
+       viewport otherwise, and the selects get clipped mid-word. */
+    .searchrow { flex-wrap: wrap; }
+    .searchrow input, .searchrow button { flex: 1 1 100%; }
+    .controls { padding: 14px; gap: 12px 14px; }
+    .ctl { flex: 1 1 140px; }
+    select, input[type=file] { max-width: 100%; width: 100%; }
+    .facets label { flex: 1 1 132px; }
+    .facets select { min-width: 0; }
+    .checks label { font-size: 12.5px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="10.1" stroke="#15181d" stroke-width="1.7"/>
+      <circle cx="12" cy="12" r="3.6" fill="#15181d"/>
+      <path d="M12 1.9v6.5M12 15.6v6.5M1.9 12h6.5M15.6 12h6.5"
+            stroke="#15181d" stroke-width="1.7" stroke-linecap="round"/>
+    </svg>
+    <span class="wordmark">Iris</span>
+  </div>
+  <p id="tagline">Visual search</p>
+  <span class="spacer"></span>
+</header>
+
+<div class="page">
+  <form id="form">
+    <div class="searchrow">
+      <input type="text" id="keywords" placeholder="Search by tag" autocomplete="off"
+             spellcheck="false">
+      <button type="submit">Search</button>
+    </div>
+    <p class="searchhint" id="keywordHint"></p>
+
+    <div class="controls">
+      <div class="ctl" id="datasetField">
+        <label for="dataset">Collection</label>
+        <select id="dataset"></select>
+      </div>
+      <div class="ctl">
+        <label for="file">Search by image</label>
+        <input type="file" id="file" accept="image/*">
+      </div>
+      <div class="ctl">
+        <label for="k">Show</label>
+        <select id="k">
+          <option>12</option>
+          <option selected>24</option>
+          <option>48</option>
+          <option>96</option>
+          <option>200</option>
+        </select>
+      </div>
+      <div class="ctl">
+        <label for="index">Index</label>
+        <select id="index" title="The scan wins on this index; the tree is selectable so the comparison can be rerun rather than taken on trust.">
+          <option value="auto">exhaustive scan</option>
+          <option value="vptree">VP-tree</option>
+        </select>
+      </div>
+      <div class="ctl">
+        <span class="lbl">Spelling</span>
+        <div class="checks">
+          <label id="fuzzyBox">
+            <input type="checkbox" id="fuzzy" checked>
+            <span>Fuzzy</span>
+          </label>
+        </div>
+      </div>
+      <fieldset class="ctl grow" id="facetBox" hidden>
+        <span class="lbl">Appearance <span class="hint">measured from the pixels</span></span>
+        <div class="facets" id="facets"></div>
+      </fieldset>
+
+      <fieldset class="ctl grow">
+        <span class="lbl">Compare using</span>
+        <div class="checks" id="descriptors"></div>
+      </fieldset>
+
+      <div class="ctl grow actions">
+        <button type="button" class="minor" id="browse">Browse the collection</button>
+        <button type="button" class="minor" id="clear">Clear image</button>
+      </div>
+    </div>
+  </form>
+
+  <p class="status" id="status"></p>
+
+  <div class="layout">
+    <aside class="aside" id="query" hidden>
+      <h2>Searching with</h2>
+      <img id="queryImg" alt="The image being searched with">
+      <p id="queryMeta"></p>
+    </aside>
+    <section class="results" id="results" hidden>
+      <h2 id="resultsTitle">Results</h2>
+      <div class="grid" id="grid"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+const el = (id) => document.getElementById(id);
+
+let bases = [];            // /api/datasets
+let queryImageId = null;   // query = an image already in the collection
+let previewUrl = null;     // query = an uploaded file
+let browseOffset = 0;
+
+const currentBase = () => bases.find(b => b.name === el("dataset").value);
+const queryFile = () => el("file").files[0] || null;
+
+const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (c) => ({
+  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+}[c]));
+
+// Trusted markup only: the caller builds the string. Anything coming from the
+// server or the user goes through setError or escapeHtml first.
+function setStatus(html, isError = false) {
+  el("status").innerHTML = html;
+  el("status").classList.toggle("error", isError);
+}
+
+// Error messages quote back what was typed ("unknown visual property: ..."), so
+// they are set as text rather than markup.
+function setError(message) {
+  el("status").textContent = message;
+  el("status").classList.add("error");
+}
+
+async function api(url, options) {
+  const res = await fetch(url, options);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(typeof data.detail === "string" ? data.detail : `Error ${res.status}`);
+  }
+  return data;
+}
+
+async function loadBases() {
+  bases = await api("/api/datasets");
+  el("dataset").innerHTML = bases.map(b => {
+    const size = b.indexed.toLocaleString();
+    const state = b.indexed ? `${size} indexed` : "not indexed";
+    return `<option value="${escapeHtml(b.name)}" ${b.indexed ? "" : "disabled"}>`
+         + `${escapeHtml(b.label)}, ${state}</option>`;
+  }).join("");
+  // One collection needs no chooser. It reappears by itself if another is added.
+  el("datasetField").hidden = bases.length < 2;
+  const ready = bases.find(b => b.indexed);
+  if (!ready) {
+    setStatus("No index found. Run <code>python setup.py</code> to build one.", true);
+    return;
+  }
+  el("dataset").value = ready.name;
+  onBaseChange();
+  // Land on photographs rather than an empty form: a page of the collection,
+  // which doubles as the starting point for a search by image.
+  await browse();
+}
+
+// Each collection has its own descriptors, so the pills are rebuilt on switch.
+function onBaseChange() {
+  const base = currentBase();
+  queryImageId = null;
+  browseOffset = 0;
+  el("query").hidden = true;
+  el("descriptors").innerHTML = base.descriptors.map((d, i) => {
+    const tip = escapeHtml([
+      `${d.standard}, ${d.family}`,
+      d.note,
+      d.vptree ? "VP-tree available" : null,
+      d.computable ? null : "indexed images only",
+    ].filter(Boolean).join(" · "));
+    return `
+    <label data-computable="${d.computable}" title="${tip}" data-title="${tip}">
+      <input type="checkbox" value="${escapeHtml(d.name)}" ${i === 0 ? "checked" : ""}>
+      <span>${escapeHtml(d.label || d.name)} <span class="dim">${d.dim}d</span></span>
+    </label>`;
+  }).join("");
+  syncDescriptorAvailability();
+
+  // Appearance is a closed list, so it gets one select each rather than sharing
+  // the text box with tags: "blue" is both a measured hue and a word 25 000
+  // people typed, and one input cannot mean both.
+  const facets = base.facets || [];
+  el("facetBox").hidden = !facets.length;
+  el("facets").innerHTML = facets.map(f => `
+    <label>${escapeHtml(f.label)}
+      <select data-facet="${escapeHtml(f.key)}">
+        <option value="">any</option>
+        ${f.words.map(w => `<option value="${escapeHtml(w)}">${escapeHtml(w)}</option>`).join("")}
+      </select>
+    </label>
+  `).join("");
+
+  const count = base.indexed.toLocaleString();
+  el("tagline").textContent = `${count} photographs`;
+  el("keywords").placeholder = `Search ${count} photographs by tag`;
+
+  // Fuzzy matching needs the vocabulary table; without it only exact words match.
+  const fuzzyWords = base.fuzzy_words || 0;
+  el("fuzzy").disabled = !fuzzyWords;
+  el("fuzzyBox").classList.toggle("off", !fuzzyWords);
+  el("fuzzyBox").title = fuzzyWords
+    ? `Also searches the words you plausibly meant, from a vocabulary of `
+      + `${fuzzyWords.toLocaleString()} words, so "vien" finds "vienna". `
+      + `Never removes the exact match.`
+    : "No vocabulary built, so only exact words match. Run: python scripts/build_tagvocab.py";
+  el("keywordHint").textContent = `Tags are ${base.keyword_source}`
+    + (fuzzyWords
+        ? `. Spelling is forgiving: ${fuzzyWords.toLocaleString()} words known, `
+          + `so "vien" finds "vienna".`
+        : ". Exact words only.");
+}
+
+function chosenFacets() {
+  return [...document.querySelectorAll("#facets select")]
+    .map(s => s.value).filter(Boolean);
+}
+
+function checkedDescriptors() {
+  return [...document.querySelectorAll("#descriptors input:checked")].map(c => c.value);
+}
+
+// The provided descriptors were computed on the full-resolution originals, which
+// this collection does not ship, so they can only compare images already
+// indexed. With a file chosen they are disabled rather than silently ignored.
+function syncDescriptorAvailability() {
+  const uploading = !!queryFile();
+  document.querySelectorAll("#descriptors label").forEach(label => {
+    const off = uploading && label.dataset.computable === "false";
+    label.classList.toggle("off", off);
+    const box = label.querySelector("input");
+    box.disabled = off;
+    if (off) box.checked = false;
+    // The descriptor's own tooltip is kept in a data attribute, so swapping in
+    // the "not available" message and back cannot destroy it.
+    label.title = off ? "Needs the original image, so not available for an upload"
+                      : label.dataset.title;
+  });
+  if (uploading && !checkedDescriptors().length) {
+    const first = document.querySelector('#descriptors label[data-computable="true"] input');
+    if (first) first.checked = true;
+  }
+}
+
+function render(data, file) {
+  // An uploaded query image is not in /images, so it is previewed from the local file.
+  let src = null, meta = "";
+  if (file) {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = URL.createObjectURL(file);
+    src = previewUrl;
+    meta = `Uploaded: ${file.name}`;
+  } else if (data.query) {
+    src = data.query.url;
+    meta = `#${data.query.id}`
+         + (data.query.tags ? `  ${data.query.tags}` : "");
+  }
+
+  el("queryImg").src = src || "";
+  el("query").hidden = !src;
+  el("queryMeta").textContent = meta;
+  el("resultsTitle").textContent = src
+    ? `Most similar first. ${data.score || ""}`
+    : "Tag matches";
+
+  // The photographs carry the grid; their measured appearance words go in the
+  // tooltip rather than under every tile, where they repeat and read as noise.
+  // Tags are whatever people typed on Flickr, so every field is escaped.
+  el("grid").innerHTML = data.results.map(r => {
+    const caption = escapeHtml(r.tags || r.class_label);
+    return `
+    <figure>
+      <span class="thumb">
+        <img src="${encodeURI(r.url)}" alt="${caption}" title="${caption}"
+             data-id="${r.id}" loading="lazy">
+        ${r.score === undefined ? "" : `<span class="score">${r.score.toFixed(3)}</span>`}
+      </span>
+    </figure>`;
+  }).join("");
+  el("results").hidden = false;
+
+  el("grid").querySelectorAll("img").forEach(img => {
+    img.onclick = () => {
+      el("file").value = "";          // an indexed image replaces any uploaded one
+      queryImageId = Number(img.dataset.id);
+      runSearch();
+    };
+  });
+}
+
+function reportTiming(data) {
+  const parts = [`${data.results.length} result(s) in ${data.elapsed_ms.toFixed(0)} ms`];
+  const ix = data.index || {};
+  if (ix.method && ix.method !== "none") {
+    parts.push(ix.method);
+    if (ix.method !== "full-text" && ix.method !== "fuzzy full-text") {
+      parts.push(`${(ix.scanned || 0).toLocaleString()} distances computed`);
+    }
+  }
+  if (ix.filter) {
+    parts.push(`filtered by ${ix.filter} to ${(ix.candidates || 0).toLocaleString()} candidates`);
+  }
+  if (data.descriptors) parts.push(data.descriptors.join(" + "));
+  if (ix.stale_rows) parts.push(`${ix.stale_rows} stale row(s) skipped`);
+  setStatus(
+    escapeHtml(parts.join(" · ")) +
+    (ix.note ? `<br><em>${escapeHtml(ix.note)}</em>` : "")
+  );
+}
+
+async function runSearch() {
+  const base = currentBase();
+  if (!base || !base.indexed) return;
+  const keywords = el("keywords").value.trim();
+  const visual = chosenFacets();
+  const descriptors = checkedDescriptors();
+  const k = Number(el("k").value);
+  const file = queryFile();
+
+  if (!keywords && !visual.length && !file && queryImageId === null) {
+    setError("Type a tag, pick an appearance, choose an image file, or click a result.");
+    return;
+  }
+  if ((file || queryImageId !== null) && descriptors.length === 0) {
+    setError("Select at least one descriptor to compare images with.");
+    return;
+  }
+
+  setStatus("Searching…");
+  try {
+    let data;
+    if (file) {
+      const body = new FormData();
+      body.append("file", file);
+      body.append("dataset", base.name);
+      if (keywords) body.append("keywords", keywords);
+      visual.forEach(v => body.append("visual", v));
+      descriptors.forEach(d => body.append("descriptors", d));
+      body.append("k", k);
+      body.append("index", el("index").value);
+      body.append("fuzzy", el("fuzzy").checked ? "true" : "false");
+      data = await api("/api/search/image", { method: "POST", body });
+    } else {
+      data = await api("/api/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dataset: base.name,
+          keywords: keywords || null,
+          visual,
+          image_id: queryImageId,
+          descriptors, k,
+          index: el("index").value,
+          fuzzy: el("fuzzy").checked,
+        }),
+      });
+    }
+    reportTiming(data);
+    render(data, file);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } catch (err) {
+    setError(err.message);
+  }
+}
+
+async function browse() {
+  const base = currentBase();
+  if (!base || !base.indexed) return;
+  const k = Number(el("k").value);
+  try {
+    const data = await api(`/api/browse?dataset=${base.name}&limit=${k}&offset=${browseOffset}`);
+    browseOffset += data.results.length;
+    el("query").hidden = true;
+    el("grid").innerHTML = "";
+    render({ ...data, score: "" }, null);
+    const from = browseOffset - data.results.length + 1;
+    el("resultsTitle").textContent =
+      `Browsing ${escapeHtml(base.label)}, ${from} to ${browseOffset}`;
+    setStatus(`${data.results.length} photographs. Click one to search with it.`);
+  } catch (err) {
+    setError(err.message);
+  }
+}
+
+el("form").onsubmit = (e) => { e.preventDefault(); runSearch(); };
+el("dataset").onchange = onBaseChange;
+el("file").onchange = () => {
+  queryImageId = null;              // an upload replaces the indexed query
+  syncDescriptorAvailability();
+};
+el("browse").onclick = browse;
+el("clear").onclick = () => {
+  queryImageId = null;
+  el("file").value = "";
+  el("query").hidden = true;
+  syncDescriptorAvailability();
+  setStatus("Query image cleared.");
+};
+
+loadBases().catch(err => setError(err.message));
+</script>
+</body>
+</html>
